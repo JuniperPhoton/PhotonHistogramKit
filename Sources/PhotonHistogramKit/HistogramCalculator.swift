@@ -264,6 +264,10 @@ public actor HistogramCalculator {
     ) -> HistogramInfo {
         let averageBinCount = Float(pixelCount) / Float(binCount)
         var subArray = histogramArray[range]
+        
+        // We don't want to actually normalize the histogram by its total pixel count,
+        // otherwise the histogram will be too small to see.
+        // Some optimizations can be done here to improve the histogram viewport.
         let range = averageBinCount * 5
         
         for i in subArray.indices {
