@@ -11,6 +11,8 @@ A Swift package to help you calculate the histogram of a `CIImage` using MPS (Me
 
 This library is used in production in my Pro Camera & Photo Editor app: [PhotonCam](https://juniperphoton.dev/photoncam/).
 
+![](./Sources/PhotonHistogramKit/Documentation.docc/Resources/hist-ipad.jpg)
+
 # Histogram Calculation
 
 ## Basic usage
