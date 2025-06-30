@@ -22,7 +22,8 @@ let package = Package(
             name: "PhotonHistogramKit"),
         .testTarget(
             name: "PhotonHistogramKitTests",
-            dependencies: ["PhotonHistogramKit"]
+            dependencies: ["PhotonHistogramKit"],
+            resources: [.process("Resources/")]
         ),
     ]
 )
