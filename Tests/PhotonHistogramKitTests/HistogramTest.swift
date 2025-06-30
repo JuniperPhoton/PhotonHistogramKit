@@ -85,6 +85,42 @@ func testHistogramCalculatorColorSpaceNotMatching() async throws {
     #expect(blue == [0, 0, 255, 0, 0, 0, 0, 0])
 }
 
+@Test
+func testHistogramForHDRImage() async throws {
+    let colorSpace = CGColorSpace(name: CGColorSpace.extendedSRGB)!
+    let calculator = HistogramCalculator()
+    let ciImage = makeSolidCIImage(
+        color: CIColor(
+            red: 1,
+            green: 2,
+            blue: 1,
+            alpha: 1,
+            colorSpace: colorSpace
+        )!,
+    )
+    let (histogramInfo, pixelCount) = try await calculator.calculateHistogramInfo(
+        ciImage: ciImage,
+        targetColorSpace: colorSpace,
+        maxHeadroom: 16,
+        binCount: 8
+    )
+    let (red, green, blue) = try await calculator.splitNormalized(
+        histogramArray: histogramInfo,
+        binCount: 8,
+        pixelCount: pixelCount
+    )
+    #expect(red.count == 8)
+    #expect(green.count == 8)
+    #expect(blue.count == 8)
+    
+    // For linear headroom of 16, the maximum value in the gamma encoded will be 4.
+    // Therefore, here's how the pixel values will be distributed in 8 bins:
+    // [0, 0.5), [0.5, 1], (1, 1.5], (1.5, 2], (2, 2.5], (2.5, 3], (3, 3.5], (3.5, 4].
+    #expect(red == [0, 255, 0, 0, 0, 0, 0, 0])
+    #expect(green == [0, 0, 0, 255, 0, 0, 0, 0])
+    #expect(blue == [0, 255, 0, 0, 0, 0, 0, 0])
+}
+
 private func makeSolidCIImage(color: CIColor, size: CGSize = CGSize(width: 10, height: 10)) -> CIImage {
     return CIImage(color: color).cropped(to: CGRect(origin: .zero, size: size))
 }
