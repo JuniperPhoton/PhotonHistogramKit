@@ -106,6 +106,12 @@ It internally uses SwiftUI's `Path` to draw the histogram.
 
 > Note: you may tempted to use the `drawingGroup` to improve the performance, which will increase the memory footprint. In my real app, I find it perfectly well-performs back to iPhone 12 with iOS 17.
 
+# Testing and Sample Code to play with
+
+See the [HistogramTest](https://github.com/JuniperPhoton/PhotonHistogramKit/blob/main/Tests/PhotonHistogramKitTests/HistogramTest.swift) file to play with the histogram calculation and testing.
+
+This repo also comes with a SwiftUI preview for the [HistogramRenderView](https://github.com/JuniperPhoton/PhotonHistogramKit/blob/main/Sources/PhotonHistogramKit/HistogramRenderView.swift#L337). Go to this file and enable Canvas in Xcode to render the preview.
+
 # MIT License
 
 Copyright (c) 2025 JuniperPhoton
