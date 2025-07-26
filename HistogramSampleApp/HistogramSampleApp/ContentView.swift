@@ -16,6 +16,14 @@ class HistogramInfoState {
     var greenInfo: HistogramInfo?
     var blueInfo: HistogramInfo?
     
+    init() {
+        print("HistogramInfoState initialized")
+    }
+    
+    deinit {
+        print("HistogramInfoState deinitialized")
+    }
+    
     func update(red: HistogramInfo?, green: HistogramInfo?, blue: HistogramInfo?) {
         self.redInfo = red
         self.greenInfo = green
@@ -44,14 +52,54 @@ class ImageEffects {
     }
 }
 
+enum Page: Hashable {
+    case demo
+}
+
 struct ContentView: View {
+    @State private var path = NavigationPath()
+    
+    var body: some View {
+        NavigationStack(path: $path) {
+            VStack {
+                Text(
+                """
+                This demo shows how to use the `HistogramCalculator` and `MetalRenderer` to render an image as well as calculate its histogram.
+                
+                Additinally, it shows how to use `AsyncSequence` and `throttledSequence` to observe changes in image effects and update the histogram accordingly.
+                
+                After going back from the demo page, you should see the log messages that say Render observation task completed.
+                
+                Be sure to cancel the observation task, otherwise it will cause memory leaks.
+                """
+                )
+                .frame(maxWidth: 500)
+                .multilineTextAlignment(.center)
+                
+                Button("Show Demo") {
+                    path.append(Page.demo)
+                }.buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+            }.navigationDestination(for: Page.self) { page in
+                switch page {
+                case .demo:
+                    DemoView().navigationTitle("Demo")
+                }
+            }
+        }
+    }
+}
+
+struct DemoView: View {
     @State private var imageEffects = ImageEffects()
     @State private var histogramInfo = HistogramInfoState()
     @State private var inputImage: CIImage?
     @State private var outputImage: CIImage?
     @State private var calculator = HistogramCalculator()
     @StateObject private var renderer = MetalRenderer()
-
+    @State private var renderObservationTask: Task<Void, Never>? = nil
+    @State private var histogramObservationTask: Task<Void, Never>? = nil
+    
     var body: some View {
         VStack {
             AppHistogramView(histogramInfoState: histogramInfo)
@@ -67,27 +115,35 @@ struct ContentView: View {
             requestUpdateImage()
             await calculateHistogram()
             
-            Task {
+            renderObservationTask = Task {
                 do {
                     for try await _ in imageEffects.asyncSequence {
                         setupImageEffects()
                         requestUpdateImage()
                     }
+                    
+                    print("Render observation task completed")
                 } catch {
                     print("Error in throttled sequence: \(error)")
                 }
             }
             
-            Task {
+            histogramObservationTask = Task {
                 do {
                     for try await _ in imageEffects.throttledSequence {
                         setupImageEffects()
                         await calculateHistogram()
                     }
+                    
+                    print("Histogram observation task completed")
                 } catch {
                     print("Error in throttled sequence: \(error)")
                 }
             }
+        }
+        .onDisappear {
+            renderObservationTask?.cancel()
+            histogramObservationTask?.cancel()
         }
     }
     
