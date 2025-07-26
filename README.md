@@ -112,6 +112,8 @@ See the [HistogramTest](https://github.com/JuniperPhoton/PhotonHistogramKit/blob
 
 This repo also comes with a SwiftUI preview for the [HistogramRenderView](https://github.com/JuniperPhoton/PhotonHistogramKit/blob/main/Sources/PhotonHistogramKit/HistogramRenderView.swift#L337). Go to this file and enable Canvas in Xcode to render the preview.
 
+Also, you can navigate to the `HistogramSampleApp` directory and run the sample app to play with the histogram calculation and rendering.
+
 # MIT License
 
 Copyright (c) 2025 JuniperPhoton
