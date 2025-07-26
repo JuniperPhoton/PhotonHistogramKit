@@ -6,13 +6,14 @@
 //
 import SwiftUI
 import PhotonHistogramKit
+import AsyncAlgorithms
 import CoreImage.CIFilterBuiltins
-import Combine
 
-class HistogramInfoState: ObservableObject {
-    @Published var redInfo: HistogramInfo?
-    @Published var greenInfo: HistogramInfo?
-    @Published var blueInfo: HistogramInfo?
+@Observable
+class HistogramInfoState {
+    var redInfo: HistogramInfo?
+    var greenInfo: HistogramInfo?
+    var blueInfo: HistogramInfo?
     
     func update(red: HistogramInfo?, green: HistogramInfo?, blue: HistogramInfo?) {
         self.redInfo = red
@@ -21,21 +22,22 @@ class HistogramInfoState: ObservableObject {
     }
 }
 
-class ImageEffects: ObservableObject {
-    @Published var ev: Float = 0.0
+@Observable
+class ImageEffects {
+    var ev: Float = 0.0
+    var contrast: Float = 1.0
     
-    var throttled: some Publisher<(), Never> {
-        self.objectWillChange.throttle(
-            for: .milliseconds(1000 / 60),
-            scheduler: DispatchQueue.main,
-            latest: true
-        )
+    var throttledSequence: any AsyncSequence<(), Never> {
+        observations { [unowned self] in
+            let _ = self.ev
+            let _ = self.contrast
+        }._throttle(for: .milliseconds(1000 / 60))
     }
 }
 
 struct ContentView: View {
-    @StateObject private var imageEffects = ImageEffects()
-    @StateObject private var histogramInfo = HistogramInfoState()
+    @State private var imageEffects = ImageEffects()
+    @State private var histogramInfo = HistogramInfoState()
     @State private var inputImage: CIImage?
     @State private var calculator = HistogramCalculator()
     
@@ -47,16 +49,19 @@ struct ContentView: View {
             Slider(value: $imageEffects.ev, in: -1...1) {
                 Text("Ev: \(imageEffects.ev, specifier: "%.2f")")
             }
-        }
-        .padding()
-        .onReceive(imageEffects.throttled) { _ in
-            Task {
-                await calculateHistogram()
+            
+            Slider(value: $imageEffects.contrast, in: 0.8...1.2) {
+                Text("Contrast: \(imageEffects.contrast, specifier: "%.2f")")
             }
         }
+        .padding()
         .task {
             await setupImage()
             await calculateHistogram()
+            
+            for await _ in imageEffects.throttledSequence {
+                await calculateHistogram()
+            }
         }
     }
     
@@ -79,7 +84,16 @@ struct ContentView: View {
             let filter = CIFilter.exposureAdjust()
             filter.inputImage = inputImage
             filter.ev = imageEffects.ev
-            guard let outputImage = filter.outputImage else {
+            
+            guard let evOutputImage = filter.outputImage else {
+                return
+            }
+            
+            let controlFilter = CIFilter.colorControls()
+            controlFilter.inputImage = evOutputImage
+            controlFilter.contrast = imageEffects.contrast
+            
+            guard let outputImage = controlFilter.outputImage else {
                 return
             }
             
@@ -98,7 +112,7 @@ struct ContentView: View {
 }
 
 struct AppHistogramView: View {
-    @ObservedObject var histogramInfoState: HistogramInfoState
+    var histogramInfoState: HistogramInfoState
     
     var body: some View {
         HistogramRenderView(
