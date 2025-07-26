@@ -16,7 +16,7 @@ import Observation
 @available(iOS 17.0, macOS 14.0, *)
 func observations<V>(
     action: @escaping () -> (V)
-) -> AsyncStream<V> {
+) -> some AsyncSequence {
     AsyncStream { continuation in
         var yieldedFirst = false
         withObservationTrackingInLoop(action: action) { value in

@@ -27,11 +27,19 @@ class ImageEffects {
     var ev: Float = 0.0
     var contrast: Float = 1.0
     
-    var throttledSequence: any AsyncSequence<(), Never> {
+    var asyncSequence: some AsyncSequence {
         observations { [unowned self] in
+            // Any properties that should yield changes must be accessed here.
+            // Though we don't actually care about the values, so here we return void.
             let _ = self.ev
             let _ = self.contrast
-        }._throttle(for: .milliseconds(1000 / 60))
+        }
+    }
+    
+    /// As for histogram purpose, we throttle the sequence to avoid too frequent updates,
+    /// which can improve performance and reduce unnecessary calculations.
+    var throttledSequence: some AsyncSequence {
+        asyncSequence._throttle(for: .milliseconds(1000 / 60))
     }
 }
 
@@ -59,8 +67,15 @@ struct ContentView: View {
             await setupImage()
             await calculateHistogram()
             
-            for await _ in imageEffects.throttledSequence {
-                await calculateHistogram()
+            do {
+                // Observe changes in image effects and update histogram accordingly.
+                // If you need to observe changes in other async sequence,
+                // you should create a new task using `Task { @MainActor in ... }` to do the same logic below.
+                for try await _ in imageEffects.throttledSequence {
+                    await calculateHistogram()
+                }
+            } catch {
+                print("Error in throttled sequence: \(error)")
             }
         }
     }
