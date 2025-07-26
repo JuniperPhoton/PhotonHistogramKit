@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		225DEFF52E35266900535658 /* PhotonHistogramKit in Frameworks */ = {isa = PBXBuildFile; productRef = 225DEFF42E35266900535658 /* PhotonHistogramKit */; };
 		228D19D32E353412000EF363 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 228D19D22E353412000EF363 /* AsyncAlgorithms */; };
+		228D203F2E3543BD000EF363 /* PhotonMetalDisplayCore in Frameworks */ = {isa = PBXBuildFile; productRef = 228D203E2E3543BD000EF363 /* PhotonMetalDisplayCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 			files = (
 				225DEFF52E35266900535658 /* PhotonHistogramKit in Frameworks */,
 				228D19D32E353412000EF363 /* AsyncAlgorithms in Frameworks */,
+				228D203F2E3543BD000EF363 /* PhotonMetalDisplayCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,6 +123,7 @@
 			packageProductDependencies = (
 				225DEFF42E35266900535658 /* PhotonHistogramKit */,
 				228D19D22E353412000EF363 /* AsyncAlgorithms */,
+				228D203E2E3543BD000EF363 /* PhotonMetalDisplayCore */,
 			);
 			productName = HistogramSampleApp;
 			productReference = 225DEFC82E35265B00535658 /* HistogramSampleApp.app */;
@@ -207,6 +210,7 @@
 			packageReferences = (
 				225DEFF32E35266900535658 /* XCLocalSwiftPackageReference "../../PhotonHistogramKit" */,
 				228D19D12E353412000EF363 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+				228D203D2E3543BD000EF363 /* XCRemoteSwiftPackageReference "PhotonMetalDisplayCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 225DEFC92E35265B00535658 /* Products */;
@@ -623,6 +627,14 @@
 				minimumVersion = 1.0.4;
 			};
 		};
+		228D203D2E3543BD000EF363 /* XCRemoteSwiftPackageReference "PhotonMetalDisplayCore" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/JuniperPhoton/PhotonMetalDisplayCore";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -634,6 +646,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 228D19D12E353412000EF363 /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
 			productName = AsyncAlgorithms;
+		};
+		228D203E2E3543BD000EF363 /* PhotonMetalDisplayCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 228D203D2E3543BD000EF363 /* XCRemoteSwiftPackageReference "PhotonMetalDisplayCore" */;
+			productName = PhotonMetalDisplayCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

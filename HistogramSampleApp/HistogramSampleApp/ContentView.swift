@@ -6,6 +6,7 @@
 //
 import SwiftUI
 import PhotonHistogramKit
+import PhotonMetalDisplayCore
 import AsyncAlgorithms
 import CoreImage.CIFilterBuiltins
 
@@ -47,38 +48,51 @@ struct ContentView: View {
     @State private var imageEffects = ImageEffects()
     @State private var histogramInfo = HistogramInfoState()
     @State private var inputImage: CIImage?
+    @State private var outputImage: CIImage?
     @State private var calculator = HistogramCalculator()
-    
+    @StateObject private var renderer = MetalRenderer()
+
     var body: some View {
         VStack {
             AppHistogramView(histogramInfoState: histogramInfo)
                 .aspectRatio(3, contentMode: .fit)
-                .padding(.bottom)
-            
-            Slider(value: $imageEffects.ev, in: -1...1) {
-                Text("Ev: \(imageEffects.ev, specifier: "%.2f")")
-            }
-            
-            Slider(value: $imageEffects.contrast, in: 0.8...1.2) {
-                Text("Contrast: \(imageEffects.contrast, specifier: "%.2f")")
-            }
+            MetalView(renderer: renderer, renderMode: .renderWhenDirty)
+            ImageEffectsAdjustmentsView(imageEffects: imageEffects)
         }
         .padding()
         .task {
+            await setupContext()
             await setupImage()
+            setupImageEffects()
+            requestUpdateImage()
             await calculateHistogram()
             
-            do {
-                // Observe changes in image effects and update histogram accordingly.
-                // If you need to observe changes in other async sequence,
-                // you should create a new task using `Task { @MainActor in ... }` to do the same logic below.
-                for try await _ in imageEffects.throttledSequence {
-                    await calculateHistogram()
+            Task {
+                do {
+                    for try await _ in imageEffects.asyncSequence {
+                        setupImageEffects()
+                        requestUpdateImage()
+                    }
+                } catch {
+                    print("Error in throttled sequence: \(error)")
                 }
-            } catch {
-                print("Error in throttled sequence: \(error)")
+            }
+            
+            Task {
+                do {
+                    for try await _ in imageEffects.throttledSequence {
+                        setupImageEffects()
+                        await calculateHistogram()
+                    }
+                } catch {
+                    print("Error in throttled sequence: \(error)")
+                }
             }
         }
+    }
+    
+    private func setupContext() async {
+        renderer.initializeCIContext(colorSpace: nil, name: "preview")
     }
     
     private func setupImage() async {
@@ -90,29 +104,47 @@ struct ContentView: View {
         self.inputImage = inputImage
     }
     
-    private func calculateHistogram() async {
+    private func requestUpdateImage() {
+        guard let outputImage = outputImage ?? inputImage else {
+            print("Input image is not set")
+            return
+        }
+        
+        renderer.requestChanged(displayedImage: outputImage)
+    }
+    
+    private func setupImageEffects() {
         guard let inputImage = inputImage else {
             print("Input image is not set")
             return
         }
         
+        let filter = CIFilter.exposureAdjust()
+        filter.inputImage = inputImage
+        filter.ev = imageEffects.ev
+        
+        guard let evOutputImage = filter.outputImage else {
+            return
+        }
+        
+        let controlFilter = CIFilter.colorControls()
+        controlFilter.inputImage = evOutputImage
+        controlFilter.contrast = imageEffects.contrast
+        
+        guard let outputImage = controlFilter.outputImage else {
+            return
+        }
+        
+        self.outputImage = outputImage
+    }
+    
+    private func calculateHistogram() async {
+        guard let outputImage = outputImage else {
+            print("Input image is not set")
+            return
+        }
+        
         do {
-            let filter = CIFilter.exposureAdjust()
-            filter.inputImage = inputImage
-            filter.ev = imageEffects.ev
-            
-            guard let evOutputImage = filter.outputImage else {
-                return
-            }
-            
-            let controlFilter = CIFilter.colorControls()
-            controlFilter.inputImage = evOutputImage
-            controlFilter.contrast = imageEffects.contrast
-            
-            guard let outputImage = controlFilter.outputImage else {
-                return
-            }
-            
             let (info, pixelCount) = try await calculator.calculateHistogramInfo(ciImage: outputImage)
             let (r, g, b) = try await calculator.splitNormalized(
                 histogramArray: info,
@@ -123,6 +155,20 @@ struct ContentView: View {
             self.histogramInfo.update(red: r, green: g, blue: b)
         } catch {
             print("calculateHistogram error: \(error)")
+        }
+    }
+}
+
+struct ImageEffectsAdjustmentsView: View {
+    @Bindable var imageEffects: ImageEffects
+    
+    var body: some View {
+        Slider(value: $imageEffects.ev, in: -1...1) {
+            Text("Ev: \(imageEffects.ev, specifier: "%.2f")")
+        }
+        
+        Slider(value: $imageEffects.contrast, in: 0.8...1.2) {
+            Text("Contrast: \(imageEffects.contrast, specifier: "%.2f")")
         }
     }
 }
@@ -145,10 +191,10 @@ struct AppHistogramView: View {
             )
             
             HStack {
-                Toggle("Red", isOn: $showRed)
-                Toggle("Green", isOn: $showGreen)
-                Toggle("Blue", isOn: $showBlue)
-                Toggle("Luminance", isOn: $showLuminance)
+                Toggle("R", isOn: $showRed)
+                Toggle("G", isOn: $showGreen)
+                Toggle("B", isOn: $showBlue)
+                Toggle("L", isOn: $showLuminance)
             }
         }
     }
