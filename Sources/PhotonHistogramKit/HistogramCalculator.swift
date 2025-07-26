@@ -35,6 +35,8 @@ public typealias HistogramInfo = [UInt32]
 /// ```
 ///
 /// The split result can be rendered using ``HistogramRenderView``.
+///
+/// > Note: This actor caches the reference of ``CIContext``, as it's a heavy object that can be reused.
 public actor HistogramCalculator {
     /// The default bin count for the histogram.
     /// May be used in ``HistogramCalculator/calculateHistogramInfo(ciImage:maxHeadroom:binCount:maxSizeInPixel:)``
