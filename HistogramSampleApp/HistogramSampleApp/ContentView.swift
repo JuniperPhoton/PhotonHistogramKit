@@ -53,6 +53,7 @@ struct ContentView: View {
         VStack {
             AppHistogramView(histogramInfoState: histogramInfo)
                 .aspectRatio(3, contentMode: .fit)
+                .padding(.bottom)
             
             Slider(value: $imageEffects.ev, in: -1...1) {
                 Text("Ev: \(imageEffects.ev, specifier: "%.2f")")
@@ -129,11 +130,43 @@ struct ContentView: View {
 struct AppHistogramView: View {
     var histogramInfoState: HistogramInfoState
     
+    @State private var showRed = true
+    @State private var showGreen = true
+    @State private var showBlue = true
+    @State private var showLuminance = true
+    
     var body: some View {
-        HistogramRenderView(
-            redInfo: histogramInfoState.redInfo,
-            greenInfo: histogramInfoState.greenInfo,
-            blueInfo: histogramInfoState.blueInfo
-        )
+        VStack {
+            HistogramRenderView(
+                redInfo: histogramInfoState.redInfo,
+                greenInfo: histogramInfoState.greenInfo,
+                blueInfo: histogramInfoState.blueInfo,
+                options: HistogramRenderView.Options(displayChannels: channels)
+            )
+            
+            HStack {
+                Toggle("Red", isOn: $showRed)
+                Toggle("Green", isOn: $showGreen)
+                Toggle("Blue", isOn: $showBlue)
+                Toggle("Luminance", isOn: $showLuminance)
+            }
+        }
+    }
+    
+    private var channels: HistogramRenderView.DisplayChannel {
+        var channels: HistogramRenderView.DisplayChannel = []
+        if showRed {
+            channels.insert(.red)
+        }
+        if showGreen {
+            channels.insert(.green)
+        }
+        if showBlue {
+            channels.insert(.blue)
+        }
+        if showLuminance {
+            channels.insert(.luminance)
+        }
+        return channels
     }
 }
