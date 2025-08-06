@@ -99,9 +99,10 @@ struct DemoView: View {
     @StateObject private var renderer = MetalRenderer()
     @State private var renderObservationTask: Task<Void, Never>? = nil
     @State private var histogramObservationTask: Task<Void, Never>? = nil
-    
+    @State private var cameraAdjustments: CameraAdjustments = CameraAdjustments()
     var body: some View {
         VStack {
+            ImageAdjustmentsView(adjustments: cameraAdjustments)
             AppHistogramView(histogramInfoState: histogramInfo)
                 .aspectRatio(3, contentMode: .fit)
             MetalView(renderer: renderer, renderMode: .renderWhenDirty)
@@ -270,5 +271,39 @@ struct AppHistogramView: View {
             channels.insert(.luminance)
         }
         return channels
+    }
+}
+
+@Observable
+class CameraAdjustments {
+    var minEv: CGFloat? = nil
+    var maxEv: CGFloat? = nil
+    var ev: CGFloat = 0.0
+    
+    var supportAdjustingEv: Bool {
+        // Sample code: demonstrate to read from the external settings.
+        UserDefaults.standard.bool(forKey: "canAdjustBrightness")
+    }
+}
+
+struct ImageAdjustmentsView: View {
+    @Bindable var adjustments: CameraAdjustments
+    
+    var body: some View {
+        VStack {
+            let minEv = adjustments.minEv
+            let maxEv = adjustments.maxEv
+            
+            if let minEv, let maxEv, adjustments.supportAdjustingEv {
+                Slider(value: $adjustments.ev, in: minEv...maxEv)
+            }
+            
+            Button("Set supporting adjusting EV") {
+                // Sample code: demonstrate to set the external settings.
+                UserDefaults.standard.set(true, forKey: "canAdjustBrightness")
+                adjustments.minEv = -2.0
+                adjustments.maxEv = 2.0
+            }
+        }
     }
 }
